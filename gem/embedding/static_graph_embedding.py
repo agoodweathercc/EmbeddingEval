@@ -61,3 +61,9 @@ class StaticGraphEmbedding:
 		    A numpy array of size #nodes * #nodes containing the reconstructed adjacency matrix.
 		'''
 		pass
+
+	def get_direct(self):
+		try:
+			return self['weightfile']
+		except:
+			return 'Did not find weightfile directory'

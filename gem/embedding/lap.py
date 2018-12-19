@@ -48,7 +48,7 @@ class LaplacianEigenmaps(StaticGraphEmbedding):
         return '%s_%d' % (self._method_name, self._d)
 
     def learn_embedding(self, graph=None, edge_f=None,
-                        is_weighted=False, no_python=False):
+                        is_weighted=False, no_python=False, logger=None):
         if not graph and not edge_f:
             raise Exception('graph/edge_f needed')
         if not graph:
@@ -63,7 +63,10 @@ class LaplacianEigenmaps(StaticGraphEmbedding):
 
         p_d_p_t = np.dot(v, np.dot(np.diag(w), v.T))
         eig_err = np.linalg.norm(p_d_p_t - L_sym)
-        # print('Laplacian matrix recon. error (low rank): %f' % eig_err)
+        if logger== None:
+            print('Laplacian matrix recon. error (low rank): %f' % eig_err)
+        else:
+            logger.info('Laplacian matrix recon. error (low rank): %f' % eig_err)
         return self._X, (t2 - t1)
 
     def get_embedding(self):

@@ -49,7 +49,7 @@ class HOPE(StaticGraphEmbedding):
         return '%s_%d' % (self._method_name, self._d)
 
     def learn_embedding(self, graph=None, edge_f=None,
-                        is_weighted=False, no_python=False):
+                        is_weighted=False, no_python=False, logger=None):
         if not graph and not edge_f:
             raise Exception('graph/edge_f needed')
         if not graph:

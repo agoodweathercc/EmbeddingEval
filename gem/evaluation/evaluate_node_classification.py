@@ -22,6 +22,8 @@ class TopKRanker(oneVr):
 
 
 def evaluateNodeClassification(X, Y, test_ratio):
+    print( np.shape(X))
+    print( np.shape(Y))
     X_train, X_test, Y_train, Y_test = sk_ms.train_test_split(
         X,
         Y,
@@ -34,6 +36,9 @@ def evaluateNodeClassification(X, Y, test_ratio):
     classif2 = TopKRanker(lr())
     classif2.fit(X_train, Y_train)
     prediction = classif2.predict(X_test, top_k_list)
+    # print('debug')
+    # print(Y_test, prediction)
+    # prediction = np.array([[1], [0], [0],[1]])
     micro = f1_score(Y_test, prediction, average='micro')
     macro = f1_score(Y_test, prediction, average='macro')
     return (micro, macro)

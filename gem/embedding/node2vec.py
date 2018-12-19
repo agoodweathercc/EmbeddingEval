@@ -56,7 +56,7 @@ class node2vec(StaticGraphEmbedding):
         return '%s_%d' % (self._method_name, self._d)
 
     def learn_embedding(self, graph=None, edge_f=None,
-                        is_weighted=False, no_python=False):
+                        is_weighted=False, no_python=False, logger=None):
         args = ["gem/c_exe/node2vec"]
         print('call node2vec')
         if not graph and not edge_f:

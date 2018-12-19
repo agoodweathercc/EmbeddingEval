@@ -14,8 +14,9 @@ import pdb
 import sys
 sys.path.append('./')
 sys.path.append(os.path.realpath(__file__))
-
-from .static_graph_embedding import StaticGraphEmbedding
+sys.path.append('/home/cai.507/Documents/DeepLearning/GEM/')
+sys.path.append('/home/cai.507/Documents/DeepLearning/GEM/embedding')
+from static_graph_embedding import StaticGraphEmbedding
 from gem.utils import graph_util, plot_util
 from gem.evaluation import visualize_embedding as viz
 from time import time
@@ -58,7 +59,7 @@ class GraphFactorization(StaticGraphEmbedding):
         return [f1, f2, f1 + f2]
 
     def learn_embedding(self, graph=None, edge_f=None,
-                        is_weighted=False, no_python=False):
+                        is_weighted=False, no_python=False, logger=None):
         c_flag = True
         if not graph and not edge_f:
             raise Exception('graph/edge_f needed')
@@ -96,12 +97,10 @@ class GraphFactorization(StaticGraphEmbedding):
         for iter_id in range(self._max_iter):
             if not iter_id % self._print_step:
                 [f1, f2, f] = self._get_f_value(graph)
-                print('\t\tIter id: %d, Objective: %g, f1: %g, f2: %g' % (
-                    iter_id,
-                    f,
-                    f1,
-                    f2
-                ))
+                if logger == None:
+                    print('\t\tIter id: %d, Objective: %g, f1: %g, f2: %g' % (iter_id,f,f1,f2))
+                else:
+                    logger.info('\t\tIter id: %d, Objective: %g, f1: %g, f2: %g' % (iter_id, f, f1, f2))
             for i, j, w in graph.edges(data='weight', default=1):
                 if j <= i:
                     continue
@@ -135,7 +134,7 @@ class GraphFactorization(StaticGraphEmbedding):
 
 if __name__ == '__main__':
     # load Zachary's Karate graph
-    edge_f = 'data/karate.edgelist'
+    edge_f = '/home/cai.507/Documents/DeepLearning/GEM/data/karate.edgelist'
     G = graph_util.loadGraphFromEdgeListTxt(edge_f, directed=False)
     G = G.to_directed()
     res_pre = 'results/testKarate'
@@ -145,7 +144,7 @@ if __name__ == '__main__':
     embedding.learn_embedding(graph=G, edge_f=None,
                               is_weighted=True, no_python=True)
     # print ('Graph Factorization:\n\tTraining time: %f' % (time() - t1))
-
+    sys.exit()
     viz.plot_embedding2D(embedding.get_embedding(),
                          di_graph=G, node_colors=None)
     plt.show()

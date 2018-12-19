@@ -5,8 +5,10 @@ if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-import numpy as np
+import sys
+sys.path.append('/home/cai.507/Documents/DeepLearning/deep-persistence/pythoncode/GEM/gem/')
+sys.path.append('/home/cai.507/Documents/DeepLearning/deep-persistence/pythoncode/GEM/')
+sys.path.append('/home/cai.507/Documents/DeepLearning/deep-persistence/pythoncode/GEM/gem/embedding')
 import scipy.io as sio
 import networkx as nx
 
@@ -14,12 +16,19 @@ import sys
 sys.path.append('./')
 sys.path.append(os.path.realpath(__file__))
 
-from .static_graph_embedding import StaticGraphEmbedding
+from static_graph_embedding import StaticGraphEmbedding
 from gem.utils import graph_util, plot_util
 from gem.evaluation import visualize_embedding as viz
-from .sdne_utils import *
+from sdne_utils import *
+
+# force to use cpu
+# https://stackoverflow.com/questions/40690598/can-keras-with-tensorflow-backend-be-forced-to-use-cpu-or-gpu-at-will
+# import os
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 from keras.layers import Input, Dense, Lambda, merge
+from keras.layers.merge import  add, concatenate
 from keras.models import Model, model_from_json
 import keras.regularizers as Reg
 from keras.optimizers import SGD, Adam
@@ -28,6 +37,8 @@ from keras import backend as KBack
 from theano.printing import debugprint as dbprint, pprint
 from time import time
 
+# might be useful for debugging
+# https://github.com/palash1992/GEM/issues/25
 
 class SDNE(StaticGraphEmbedding):
 
@@ -56,15 +67,25 @@ class SDNE(StaticGraphEmbedding):
             'actfn': 'relu',
             'modelfile': None,
             'weightfile': None,
-            # 'savefilesuffix': None # test
-            'savefilesuffix': 'test'  # test
+            'savefilesuffix': None
+
         }
         hyper_params.update(kwargs)
         for key in hyper_params.keys():
             self.__setattr__('_%s' % key, hyper_params[key])
         for dictionary in hyper_dict:
+            print (dictionary)
             for key in dictionary:
+                print('setting %s to %s'%(key, dictionary[key]))
                 self.__setattr__('_%s' % key, dictionary[key])
+        print (hyper_params)
+
+    def get_hyperparameter(self):
+        return 0
+        # return self.
+
+    def get_direct(self):
+        return 0
 
     def get_method_name(self):
         return self._method_name
@@ -80,7 +101,7 @@ class SDNE(StaticGraphEmbedding):
             graph = graph_util.loadGraphFromEdgeListTxt(edge_f)
         S = nx.to_scipy_sparse_matrix(graph)
         t1 = time()
-        S = (S + S.T) / 2
+        S = (S + S.T) / 2 # i think this maybe a bug. No need to divide by 2
         self._node_num = graph.number_of_nodes()
 
         # Generate encoder, decoder and autoencoder
@@ -113,7 +134,7 @@ class SDNE(StaticGraphEmbedding):
         # Outputs
         x_diff1 = merge([x_hat1, x1],
                         mode=lambda ab: ab[0] - ab[1],
-                        output_shape=lambda L: L[1])
+                        output_shape=lambda L: L[1]) # change merge to add to see
         x_diff2 = merge([x_hat2, x2],
                         mode=lambda ab: ab[0] - ab[1],
                         output_shape=lambda L: L[1])
@@ -154,7 +175,7 @@ class SDNE(StaticGraphEmbedding):
             loss_weights=[1, 1, self._alpha]
         )
 
-        self._model.fit_generator(
+        history_callback = self._model.fit_generator(
             generator=batch_generator_sdne(S, self._beta, self._n_batch, True),
             nb_epoch=self._num_iter,
             samples_per_epoch=S.nonzero()[0].shape[0] // self._n_batch,
@@ -167,10 +188,10 @@ class SDNE(StaticGraphEmbedding):
         if(self._weightfile is not None):
             saveweights(self._encoder, self._weightfile[0])
             saveweights(self._decoder, self._weightfile[1])
-
         if(self._modelfile is not None):
             savemodel(self._encoder, self._modelfile[0])
             savemodel(self._decoder, self._modelfile[1])
+
 
         if(self._savefilesuffix is not None):
             saveweights(
@@ -191,7 +212,7 @@ class SDNE(StaticGraphEmbedding):
             )
             # Save the embedding
             np.savetxt('embedding_' + self._savefilesuffix + '.txt', self._Y)
-        return self._Y, (t2 - t1)
+        return self._Y, (t2 - t1), history_callback
 
     def get_embedding(self, filesuffix=None):
         return self._Y if filesuffix is None else np.loadtxt(
@@ -245,26 +266,59 @@ class SDNE(StaticGraphEmbedding):
             else:
                 return decoder.predict(embed, batch_size=self._n_batch)
 
+def read_hyper_dict():
+    hyper_dict = open('/home/cai.507/Documents/DeepLearning/deep-persistence/pythoncode/GEM/blogcat_hypRange_1.txt').read()
+    import ast
+    hyper_dict = ast.literal_eval(hyper_dict)
+    hyper_dict['sdne']
+    return hyper_dict['sdne']
 
 if __name__ == '__main__':
+    hyper_dict = read_hyper_dict()
+    embedding = SDNE(hyper_dict, d = 2, K = 3)
     # load Zachary's Karate graph
-    edge_f = 'data/karate.edgelist'
+    edge_f = '/home/cai.507/Documents/DeepLearning/deep-persistence/pythoncode/GEM/data/karate.edgelist'
     G = graph_util.loadGraphFromEdgeListTxt(edge_f, directed=False)
     G = G.to_directed()
     res_pre = 'results/testKarate'
     graph_util.print_graph_stats(G)
     t1 = time()
-    embedding = SDNE(d=2, beta=5, alpha=1e-5, nu1=1e-6, nu2=1e-6, K=3,
-                     n_units=[50, 15], rho=0.3, n_iter=50, xeta=0.01,
-                     n_batch=500,
-                     modelfile=['./intermediate/enc_model.json',
-                                './intermediate/dec_model.json'],
-                     weightfile=['./intermediate/enc_weights.hdf5',
-                                 './intermediate/dec_weights.hdf5'])
+    for key, val in hyper_dict.items():
+        if len(val)>1:
+            print (key, val)
+
     embedding.learn_embedding(graph=G, edge_f=None,
                               is_weighted=True, no_python=True)
     print('SDNE:\n\tTraining time: %f' % (time() - t1))
 
-    viz.plot_embedding2D(embedding.get_embedding(),
-                         di_graph=G, node_colors=None)
-    plt.show()
+    sys.exit()
+
+    # awkward way
+    for beta_idx in range(len(hyper_dict['beta'])):
+        for n_units_idx in range(2, len(hyper_dict['n_units'])):
+            embedding = SDNE(d=2, beta=hyper_dict['beta'][beta_idx],
+                             alpha=hyper_dict['alpha'][0],
+                             nu1=hyper_dict['nu1'][0],
+                             nu2=hyper_dict['nu2'][0],
+                             K=len(hyper_dict['n_units'][n_units_idx])-1, # a bit special here
+                             n_units=hyper_dict['n_units'][n_units_idx],
+                             rho=hyper_dict['rho'][0],
+                             n_iter=hyper_dict['n_iter'][0],
+                             xeta=hyper_dict['xeta'][0],
+                             n_batch= hyper_dict['n_batch'][0],
+
+                             modelfile=['./intermediate/enc_model.json',
+                                        './intermediate/dec_model.json'],
+
+                             weightfile=['./intermediate/enc_weights.hdf5',
+                                         './intermediate/dec_weights.hdf5'])
+
+
+            embedding.learn_embedding(graph=G, edge_f=None,
+                                      is_weighted=True, no_python=True)
+            print('SDNE:\n\tTraining time: %f' % (time() - t1))
+
+            # viz.plot_embedding2D(embedding.get_embedding(),
+            #                      di_graph=G, node_colors=None)
+            # plt.show()
+
