@@ -1,0 +1,119 @@
+{
+    "gf": {
+        "max_iter": [
+            200
+        ], 
+        "eta": [
+            0.001,
+            0.01,
+            0.1
+        ], 
+        "regu": [
+            0.001,
+            0.01,
+            0.1,
+            1.0
+        ], 
+        "print_step": [
+            10
+        ]
+    }, 
+    "hope": {
+        "beta": [
+            0.00390625,
+            0.0078125,
+            0.015625,
+            0.03125,
+            0.0625,
+            0.125,
+            0.25,
+            0.5
+        ]
+    }, 
+    "lap": {
+    }, 
+    "lle": {
+    }, 
+    "node2vec": {
+        "max_iter": [
+            1
+        ], 
+        "walk_len": [
+            80
+        ], 
+        "num_walks": [
+            10
+        ], 
+        "con_size": [
+            10
+        ], 
+        "ret_p": [
+            0.25,
+            0.5,
+            1,
+            2
+        ], 
+        "inout_p": [
+            0.25,
+            0.5,
+            1,
+            2
+        ]
+    }, 
+    "sdne": {
+        "beta": [
+            2,
+            5,
+            10,
+            20
+        ], 
+        "alpha": [
+            1e-05
+        ], 
+        "nu1": [
+            1e-04
+        ], 
+        "nu2": [
+            1e-04
+        ], 
+        "n_units": [
+            [], 
+            [
+                128
+            ], 
+            [
+                512,
+                128
+            ], 
+            [
+                1024,
+                512,
+                128
+            ]
+        ], 
+        "rho": [
+            0.3
+        ], 
+        "n_iter": [
+            100
+        ], 
+        "xeta": [
+            0.01
+        ], 
+        "n_batch": [
+            500
+        ], 
+        "modelfile": [
+            [
+                "gem/intermediate/enc_model.json", 
+                "gem/intermediate/dec_model.json"
+            ]
+        ], 
+        "weightfile": [
+            [
+                "gem/intermediate/enc_weights.hdf5", 
+                "gem/intermediate/dec_weights.hdf5"
+            ]
+        ]
+    }
+}
