@@ -18,9 +18,6 @@ np.random.seed(1337)
 
 from gem.utils      import graph_util
 from gem.utils.logutil      import set_logger, make_direct
-from gem.evaluation import evaluate_node_classification as nc
-from gem.embedding.lap import LaplacianEigenmaps
-from gem.embedding.sdne     import SDNE
 from gem.embedding.sdne_utils import model_batch_predictor
 from aux import batch_generator_sdne_modified, batch_generator_sdne, get_search_num, get_one_hyper, make_hyper_direct
 
@@ -110,7 +107,6 @@ if __name__ == '__main__':
                 print('finish getting self')
                 S = nx.to_scipy_sparse_matrix(G)
 
-                my_generator = batch_generator_sdne_modified(S, n_nodes, searchrange['beta'][0], searchrange['n_batch'][0], True)
                 my_generator_ = batch_generator_sdne(S, n_nodes, searchrange['beta'][0], searchrange['n_batch'][0], True)
                 print('finish setting generator')
 
@@ -131,7 +127,6 @@ if __name__ == '__main__':
             # save embedding
             name = 'fold_' + args.fold  if args.task == 'lp' else 'emb_nc'
             np.save(direct + name, Y)
-            # np.savetxt(direct + 'embedding_.txt', Y)
             logger.info (embedding._method_name+':\n\tTraining time: %f, save file at %s' % (time() - t1, direct+name))
             logger.info('Finish evaluating static graph reconstruction\n\n\n')
 
@@ -139,26 +134,4 @@ if __name__ == '__main__':
             with open(direct+ 'param_' + args.task + '.json', 'w') as fp:
                 json.dump(embedding.__getattribute__('_param'), fp, indent=1)
             continue
-
-        # code that is no longer being used
-        try:
-            training_percents = np.linspace(0.1, 0.9, 9) if dataset not in ['flickr', 'youtube','co-author'] else np.linspace(0.01, 0.10, 10)
-            training_percents = list(training_percents)
-            print(direct + name)
-            logger.info(classification.classify(emb=direct + name + '.npy', network=mat_f, writetofile=True, classifier='LR',
-                                        dataset=dataset, algorithm=method, word2vec_format=False,
-                                        num_shuffles=5, output_dir=direct,
-                                        training_percents=training_percents))
-            #
-            # logger.info(classification.classify(emb=direct + name + '.npy', network=mat_f, writetofile=True, classifier='EigenPro',
-            #                             test_kernel="eigenpro",
-            #                             dataset=dataset, algorithm=method, word2vec_format=False,
-            #                             num_shuffles=5, output_dir=direct,
-            #                             training_percents=training_percents))
-            sys.exit()
-
-        except:
-            logger.info('Evaluation Error')
-        continue
-#######################################################################################################################
 
